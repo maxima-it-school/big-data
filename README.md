@@ -1,63 +1,36 @@
-[![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/big-data-europe/Lobby)
+## Инструкция по разворачиванию окружения Hadoop + Spark
 
-# Changes
+Развернуть проект из docker-compose
+`docker-compose up --build`
 
-Version 2.0.0 introduces uses wait_for_it script for the cluster startup
+После успешного завершения скрипта по разворачиванию, можно будет открыть интерфейсы:
 
-# Hadoop Docker
+http://localhost:9870/ - hadoop namenode 
 
-## Supported Hadoop Versions
-See repository branches for supported hadoop versions
+http://localhost:8080/ - spark master
 
-## Quick Start
+http://localhost:8081/ - spark worker
 
-To deploy an example HDFS cluster, run:
-```
-  docker-compose up
-```
+### Практическое задание 1:
 
-Run example wordcount job:
-```
-  make wordcount
-```
+Создать папку в hdfs.
 
-Or deploy in swarm:
-```
-docker stack deploy -c docker-compose-v3.yml hadoop
-```
+`hdfs dfs -mkdir /data/task_2`
 
-`docker-compose` creates a docker network that can be found by running `docker network list`, e.g. `dockerhadoop_default`.
+Добавить в созданную папку hdfs data/task_2 файл data.txt
 
-Run `docker network inspect` on the network (e.g. `dockerhadoop_default`) to find the IP the hadoop interfaces are published on. Access these interfaces with the following URLs:
+`hdfs dfs -put data/task_2/data.txt /data/task_2`
 
-* Namenode: http://<dockerhadoop_IP_address>:9870/dfshealth.html#tab-overview
-* History server: http://<dockerhadoop_IP_address>:8188/applicationhistory
-* Datanode: http://<dockerhadoop_IP_address>:9864/
-* Nodemanager: http://<dockerhadoop_IP_address>:8042/node
-* Resource manager: http://<dockerhadoop_IP_address>:8088/
+Запустить python скрипт word_count.py для расчета количества слов в файле data.txt
 
-## Configure Environment Variables
+`spark-submit --master spark://spark-master:7077 --deploy-mode client /scripts/word_count.py`
 
-The configuration parameters can be specified in the hadoop.env file or as environmental variables for specific services (e.g. namenode, datanode etc.):
-```
-  CORE_CONF_fs_defaultFS=hdfs://namenode:8020
-```
+Просмотреть результаты выполнения скрипта word_count.py
 
-CORE_CONF corresponds to core-site.xml. fs_defaultFS=hdfs://namenode:8020 will be transformed into:
-```
-  <property><name>fs.defaultFS</name><value>hdfs://namenode:8020</value></property>
-```
-To define dash inside a configuration parameter, use triple underscore, such as YARN_CONF_yarn_log___aggregation___enable=true (yarn-site.xml):
-```
-  <property><name>yarn.log-aggregation-enable</name><value>true</value></property>
-```
+`hadoop fs -cat /data/task_3/part-00000`
 
-The available configurations are:
-* /etc/hadoop/core-site.xml CORE_CONF
-* /etc/hadoop/hdfs-site.xml HDFS_CONF
-* /etc/hadoop/yarn-site.xml YARN_CONF
-* /etc/hadoop/httpfs-site.xml HTTPFS_CONF
-* /etc/hadoop/kms-site.xml KMS_CONF
-* /etc/hadoop/mapred-site.xml  MAPRED_CONF
+`hadoop fs -cat /data/task_3/part-00001`
 
-If you need to extend some other configuration file, refer to base/entrypoint.sh bash script.
+Завершить работу контейнеров
+
+`docker-compose down`

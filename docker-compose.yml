@@ -1,5 +1,4 @@
 version: "3"
-
 services:
   namenode:
     image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
@@ -10,6 +9,9 @@ services:
       - 9000:9000
     volumes:
       - hadoop_namenode:/hadoop/dfs/name
+      - ./workshop/data:/workshop/data
+      - ./workshop/hadoop_scripts:/workshop/hadoop_scripts
+      - ./workshop/config:/workshop/config
     environment:
       - CLUSTER_NAME=test
     env_file:
@@ -43,7 +45,6 @@ services:
       SERVICE_PRECONDITION: "namenode:9000 namenode:9870 datanode:9864 resourcemanager:8088"
     env_file:
       - ./hadoop.env
-  
   historyserver:
     image: bde2020/hadoop-historyserver:2.0.0-hadoop3.2.1-java8
     container_name: historyserver
@@ -54,7 +55,28 @@ services:
       - hadoop_historyserver:/hadoop/yarn/timeline
     env_file:
       - ./hadoop.env
-  
+  spark-master:
+    image: bitnami/spark:latest
+    container_name: spark-master
+    environment:
+      - SPARK_MODE=master
+      - SPARK_MASTER_HOST=spark-master
+    volumes:
+      - ./workshop/hadoop_scripts/task_2:/scripts
+    ports:
+      - "8080:8080"
+    depends_on:
+      - namenode
+  spark-worker:
+    image: bitnami/spark:latest
+    container_name: spark-worker
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER=spark://spark-master:7077
+    depends_on:
+      - spark-master
+    ports:
+      - "8081:8081"  
 volumes:
   hadoop_namenode:
   hadoop_datanode:
